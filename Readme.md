@@ -1,13 +1,18 @@
 # 🤖 Nexus Terminal AI
 
-A simple **AI-powered terminal chatbot** built with **Node.js**, **LangChain**, and **Mistral AI**.
-This project allows users to interact with an AI assistant directly from the terminal.
+A powerful **AI-powered terminal assistant** built with **Node.js, LangChain, and Mistral AI**.
 
-The assistant (named **Nexus**) can answer questions, generate text, and maintain conversation context during a session.
+The assistant (**Nexus**) runs directly in your terminal and can:
+
+* Chat with you
+* Maintain short conversation memory
+* **Send emails autonomously using an AI tool**
+
+This project demonstrates how to build a **tool-using AI agent** using LangChain.
 
 ---
 
-## 📸 Demo
+# 📸 Demo
 
 ![Nexus Terminal AI Screenshot](./preview.png)
 
@@ -15,12 +20,34 @@ The assistant (named **Nexus**) can answer questions, generate text, and maintai
 
 # 🚀 Features
 
-* 💬 Interactive **terminal-based AI chatbot**
+* 💬 Interactive **terminal AI chatbot**
 * 🧠 Powered by **Mistral AI**
-* 🔗 Built using **LangChain**
-* 🎨 Colored terminal interface using **Chalk**
-* 📝 Conversation memory during the session
+* 🔗 Built using **LangChain Agents**
+* 📧 **AI-powered email sending tool**
+* 🎨 Clean terminal UI using **Chalk**
+* 📝 Short-term **conversation memory**
 * ❌ Exit anytime using `/exit`
+
+---
+
+# 🧠 AI Tool Capability
+
+Nexus can **send emails automatically** when the conversation requires it.
+
+Example:
+
+```
+You > Send an email to john@gmail.com saying the meeting is tomorrow
+
+NEXUS > Email sent successfully to john@gmail.com
+```
+
+Behind the scenes:
+
+1. The AI detects the need to send an email.
+2. It calls the **emailTool**.
+3. The tool uses **Nodemailer + Gmail OAuth2**.
+4. The email is sent automatically.
 
 ---
 
@@ -29,6 +56,8 @@ The assistant (named **Nexus**) can answer questions, generate text, and maintai
 * **Node.js**
 * **LangChain**
 * **Mistral AI**
+* **Nodemailer**
+* **Zod**
 * **Chalk**
 * **Prompt-sync**
 * **dotenv**
@@ -45,6 +74,7 @@ nexus-terminal-ai
 ├── package.json
 ├── package-lock.json
 ├── server.js
+├── mail.service.js
 └── README.md
 ```
 
@@ -52,19 +82,23 @@ nexus-terminal-ai
 
 # ⚙️ Installation
 
-### 1️⃣ Clone the repository
+## 1️⃣ Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/nexus-terminal-ai.git
 ```
 
-### 2️⃣ Navigate to the project folder
+---
+
+## 2️⃣ Navigate to the project
 
 ```bash
 cd nexus-terminal-ai
 ```
 
-### 3️⃣ Install dependencies
+---
+
+## 3️⃣ Install dependencies
 
 ```bash
 npm install
@@ -74,21 +108,52 @@ npm install
 
 # 🔑 Environment Setup
 
-Create a `.env` file in the root folder.
+Create a `.env` file in the root directory.
 
 ```
-MISTRAL_API_KEY=your_api_key_here
+MISTRAL_API_KEY=your_mistral_api_key
+
+GOOGLE_USER=your_email@gmail.com
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REFRESH_TOKEN=your_refresh_token
 ```
 
-Get your API key from:
+---
 
-👉 [https://console.mistral.ai/](https://console.mistral.ai/)
+# 🔐 Gmail OAuth Setup
+
+This project uses **OAuth2 authentication** to securely send emails.
+
+Steps:
+
+1. Go to
+   [https://console.cloud.google.com/](https://console.cloud.google.com/)
+
+2. Create a **new project**
+
+3. Enable:
+
+```
+Gmail API
+```
+
+4. Create **OAuth credentials**
+
+5. Generate:
+
+* Client ID
+* Client Secret
+
+6. Generate a **Refresh Token**
+
+These values will be used in the `.env` file.
 
 ---
 
 # ▶️ Running the Project
 
-Start the AI assistant using:
+Start the assistant:
 
 ```bash
 node server.js
@@ -105,50 +170,94 @@ node server.js
 ======================================
 
 You > Hello
+
 NEXUS > Hey! How can I help you today?
 
-You > Who is the president of India?
-NEXUS > The current president of India is Droupadi Murmu.
+
+You > Send an email to test@gmail.com saying hello from Nexus
+
+NEXUS > email sent successfully, to test@gmail.com
 ```
 
 ---
 
 # 🧠 How It Works
 
-1. The user enters a prompt in the terminal.
-2. The message is sent to **Mistral AI** using **LangChain**.
-3. The AI generates a response.
-4. The response is printed in the terminal with styling.
-5. The conversation history is stored to maintain context.
+### 1. User enters a prompt
 
-Core code snippet:
+```
+You > Send an email to john@gmail.com
+```
+
+---
+
+### 2. The message goes to the LangChain Agent
+
+The agent has access to tools:
+
+```
+emailTool
+```
+
+---
+
+### 3. The agent decides whether to use the tool
+
+If needed, it calls:
+
+```
+sendEmail()
+```
+
+---
+
+### 4. Nodemailer sends the email
+
+Using Gmail OAuth2 authentication.
+
+---
+
+### 5. The result is returned to the user
+
+```
+email sent successfully, to john@gmail.com
+```
+
+---
+
+# 🧩 Email Tool Implementation
+
+The AI tool is defined like this:
 
 ```javascript
-const res = await model.invoke(messages);
-const reply = res.content[1].text;
+const emailTool = tool(sendEmail, {
+  name: "emailTool",
+  description: "Use this tool to send an email",
+  schema: z.object({
+    to: z.string(),
+    html: z.string(),
+    subject: z.string(),
+  }),
+});
 ```
+
+The agent automatically decides **when to use it**.
 
 ---
 
 # 📦 Dependencies
 
-* `@langchain/mistralai`
-* `langchain`
-* `chalk`
-* `prompt-sync`
-* `dotenv`
-
-Install them with:
+Install manually if needed:
 
 ```bash
-npm install @langchain/mistralai langchain chalk prompt-sync dotenv
+npm install @langchain/mistralai langchain chalk prompt-sync dotenv nodemailer zod
 ```
 
 ---
 
 # ❌ Exit the Assistant
 
-Simply type:
+Type:
 
 ```
 /exit
@@ -158,12 +267,16 @@ Simply type:
 
 # 📌 Future Improvements
 
-* Streaming responses
-* Better conversation memory
-* Command handling
-* CLI arguments support
-* Multi-model support
-* Saving chat history
+Possible next upgrades:
+
+* Streaming AI responses
+* Persistent chat memory
+* Multiple AI tools
+* File system tools
+* Web search tool
+* Voice interface
+* CLI arguments
+* Logging system
 
 ---
 

@@ -14,7 +14,8 @@ This project demonstrates how to build a **tool-using AI agent** using LangChain
 
 # 📸 Demo
 
-![Nexus Terminal AI Screenshot](./preview.png)
+![Nexus Terminal AI Screenshot](./preview1.png)
+![Email Sending demo](./preview2.png)
 
 ---
 

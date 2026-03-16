@@ -1,8 +1,10 @@
 import "dotenv/config";
 import { ChatMistralAI } from "@langchain/mistralai";
 import promptSync from "prompt-sync";
-import { HumanMessage } from "langchain";
+import { HumanMessage, createAgent, tool } from "langchain";
 import chalk from "chalk";
+import { sendEmail } from "./mail.service.js";
+import * as z from "zod";
 
 const prompt = promptSync();
 
@@ -13,6 +15,27 @@ const model = new ChatMistralAI({
 });
 
 const messages = [];
+
+const emailTool = tool(
+    sendEmail,
+    {
+        name: "emailTool",
+        description: "Use this tool to send an email",
+        returnDirect: true,
+        schema: z.object({
+            to: z.string().describe("The recipient's email address"),
+            html: z.string().describe("The HTML content of the email"),
+            subject: z.string().describe("The subject of the email"),
+        }),
+    }
+);
+
+const agent = createAgent({
+    model,
+    tools: [
+        emailTool
+    ]
+});
 
 function banner() {
     console.clear();
@@ -33,13 +56,28 @@ while (true) {
 
     messages.push(new HumanMessage(query));
 
-    const res = await model.invoke(messages);
+    if (messages.length > 10) messages.shift();
 
-    const reply = res.content[1].text;
+    const res = await agent.invoke({
+        messages
+    });
 
-    messages.push(reply);
+    const reply = res.messages[res.messages.length - 1];
 
-    console.log(chalk.blue.bold(`${AI_NAME} > `) + chalk.white(reply));
+    let text;
+
+    if (typeof reply.content === "string") {
+        text = reply.content;
+    } else {
+        text = reply.content
+            .filter(c => c.type === "text")
+            .map(c => c.text)
+            .join("");
+    }
+
+    // messages.push(reply);
+
+    console.log(chalk.blue.bold(`${AI_NAME} > `) + chalk.white(text));
     console.log(chalk.gray("--------------------------------------"));
 }
 
